@@ -91,16 +91,96 @@ def chooseLeague(leaId):
     f = shelve.open('./league/'+leaId)
     return f
     
-def listLeague(nationName):
+def listLeague(nationName, ty='name'):
     nF = chooseNation(nationName)
-    leagList = nF.leagues
+    leagList = nF['leagues']
     nF.close()
     
-    leagNames = []
+    leagNames = {}
+    leagIDs = {}
     for each in leagList:
         lF = chooseLeague(each)
-        leagNames.append(lF['name'])
-        lF.close()   
+        leagNames[lF['name']] = lF['id']
+        leagIDs[lF['id']] = lF['name'] 
+        lF.close()  
+    if (ty == 'name'):
+        return leagNames
+    elif (ty == 'id'):
+        return leagIDs
+        
+def createClub():
+    #club id
+    thisId = uuid.uuid4()
+    
+    #club name
+    thisName = raw_input('Club name? ')
+    
+    #club league
+    n = selectNation()
+    nationalLeague = listLeague(n)
+    nationalLeagueList = nationalLeague.keys()
+    
+    for each in nationalLeagueList:
+        print str(nationalLeagueList.index(each) + 1) + ': '+ each
+        
+    print ''
+    userInput = raw_input('Club league? ')
+    thisLeague = nationalLeagueList[string.atoi(userInput) - 1]
+    lF = chooseLeague(str(nationalLeague[thisLeague]))
+    temp = lF['teams']
+    temp.append(str(thisId))
+    lF['teams'] = temp
+    lF.close()
+    
+    #club matches {matchID: 3/1/0}
+    thisMatch = {}
+    
+    #club key matches {matchID: 3/1/0}
+    thisKeyMatch = {}
+    
+    #club theta points
+    thisThetaRound = 0
+    thisThetaPoints = 0
+    
+    #confirm
+    print ''
+    print 'Name: ' + thisName
+    print 'League: ' + thisLeague
+    print ''
+    
+    confirmation = raw_input('Is it OK? Y for yes ')
+    
+    if (confirmation == 'Y'):
+        tF = shelve.open('./club/'+str(thisId))
+        tF['id'] = thisId
+        tF['name'] = thisName
+        tF['league'] = thisLeague
+        tF['match'] = thisMatch
+        tF['keyMatch'] = thisKeyMatch
+        tF['thetaRound'] = thisThetaRound
+        tF['thetaPoint'] = thisThetaPoints
+        tF.close()
+        print 'done'
+        restart()
+    else:
+        print 'Cancelled, please restart ...'
+        lF = chooseLeague(str(nationalLeague[thisLeague]))
+        temp = lF['teams']
+        temp.remove(str(thisId))
+        lF['teams'] = temp
+        lF.close()
+        restart()
+        
+def chooseClub(clubId):
+    f = shelve.open('./club/'+clubId)
+    return f
+    
+def listClub(nation, leagueIndex, clubIndex):
+    leagueList = listLeague(nation, 'id').keys()
+    league = chooseLeague(leagueList[leagueIndex])
+    returnClub = chooseClub(league['teams'][clubIndex])
+    return returnClub
+    
         
 def exitMe():
     print 'exit, byebye'
@@ -119,7 +199,7 @@ def start():
     
     selection = raw_input('What do you want to create: ')
     
-    options = {'1': createNation, '2': createLeague, 'e': exitMe}
+    options = {'1': createNation, '2': createLeague, '3': createClub, 'e': exitMe}
     
     options[selection]()
     
@@ -134,7 +214,7 @@ def restart():
     
     selection = raw_input('What do you want to create: ')
     
-    options = {'1': createNation, '2': createLeague, 'e': exitMe}
+    options = {'1': createNation, '2': createLeague, '3': createClub, 'e': exitMe}
     
     options[selection]()
     
